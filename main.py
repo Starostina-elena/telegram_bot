@@ -18,18 +18,24 @@ def bot_command_start(update, context):
 
 
 def first_response(update, context):
-    locality = update.message.text
+    context.user_data['locality'] = update.message.text
+
     reply_keyboard = [['/start', '/stop']]
     markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False)
-    update.message.reply_text(
-        "Какая погода в городе {locality}?".format(**locals()), reply_markup=markup)
+
+    update.message.reply_text(f"Какая погода в городе {context.user_data['locality']}?", reply_markup=markup)
+
     return 2
 
 
 def second_response(update, context):
     weather = update.message.text
-    print(weather)
-    update.message.reply_text("Спасибо за участие в опросе! Всего доброго!")
+
+    if 'locality' in context.user_data:
+        update.message.reply_text(f"Спасибо за участие в опросе! Привет, {context.user_data['locality']}!")
+    else:
+        update.message.reply_text('Спасибо за участие в опросе!')
+
     return ConversationHandler.END
 
 
@@ -60,8 +66,8 @@ def main():
         entry_points=[CommandHandler('start', bot_command_start)],
         states={
             1: [CommandHandler('stop', bot_stop), CommandHandler('skip', skip_command),
-                MessageHandler(Filters.text, first_response)],
-            2: [CommandHandler('stop', bot_stop), MessageHandler(Filters.text, second_response)]
+                MessageHandler(Filters.text, first_response, pass_user_data=True)],
+            2: [CommandHandler('stop', bot_stop), MessageHandler(Filters.text, second_response, pass_user_data=True)]
         },
 
         fallbacks=[CommandHandler('stop', bot_stop)]
